@@ -1,0 +1,22 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+  Adaptive launcher icon (Android 8 / API 26+).
+
+  Before this file existed the app had no adaptive icon at all: every launcher
+  took the legacy `mipmap-*/ic_launcher.png` and applied its own mask, which is
+  why the icon looked smaller and rounder than the plate the user drew.
+
+  * `@drawable/ic_launcher_background` — the plate, as a <shape> gradient that
+    matches the source SVG's `t2Bg` (white -> #F1F4F9, top to bottom). Drawn as
+    a vector so every density gets the same smooth ramp; `angle="270"` is the
+    gradient direction Android uses for top -> bottom.
+  * `@mipmap/ic_launcher_foreground` — the three prisms + the centre dot, on a
+    transparent 108dp canvas, sized so the artwork's circumscribed circle is
+    ~60% of the canvas (inside the 66/108 safe zone the launcher may crop to).
+
+  The legacy `mipmap-*/ic_launcher.png` files are kept for API < 26.
+-->
+<adaptive-icon xmlns:android="http://schemas.android.com/apk/res/android">
+    <background android:drawable="@drawable/ic_launcher_background"/>
+    <foreground android:drawable="@mipmap/ic_launcher_foreground"/>
+</adaptive-icon>

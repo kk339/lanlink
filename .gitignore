@@ -1,0 +1,40 @@
+# 构建产物与依赖缓存（都能重新生成）
+**/build/
+**/.dart_tool/
+**/ephemeral/
+**/.gradle/
+*.dill
+
+# 交付包与二进制
+*.apk
+*.aab
+*.zip
+*.exe
+*.msi
+*.dll
+*.pdb
+*.wasm
+
+# 机器身份 / 证书 / 运行期数据 —— 这些**永远不要**进库
+**/.lanlink-certs/
+**/.test-certs/
+**/*.pem
+**/*.key
+**/*.p12
+**/*.jks
+*.log
+peer.txt
+
+# 编辑器 / 系统
+.idea/
+.vscode/
+*.iml
+Thumbs.db
+desktop.ini
+.DS_Store
+
+# 凭据 / 平台配置（永远不进库）
+.env
+.env.*
+google-services.json
+*.der

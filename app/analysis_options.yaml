@@ -1,0 +1,12 @@
+# lanlink_app -- analysis configuration.
+#
+# Flutter's official lint set, kept at full strength. The app is the M4 layer
+# that must stay Web-buildable, so the layering rules (spec §8.1) are enforced
+# by review against this baseline; no rule is relaxed.
+analyzer:
+  exclude:
+    - build/**
+    - web/**
+    - windows/**
+    - android/**
+include: package:flutter_lints/flutter.yaml

@@ -1,0 +1,20 @@
+name: lanlink_cli
+description: >-
+  Pure-Dart command line front-end for lanlink: peer discovery, announcing this
+  device, sending files over `lanlink/v1` and reading session history. Provides
+  the `discover`, `announce`, `send` and `history` subcommands.
+version: 0.1.0
+publish_to: none
+
+environment:
+  sdk: ^3.6.0
+
+dependencies:
+  lanlink_core:
+    path: ../core
+  lanlink_store:        # M3: session history data layer (pure Dart)
+    path: ../store
+
+dev_dependencies:
+  lints: ^4.0.0
+  test: ^1.25.0

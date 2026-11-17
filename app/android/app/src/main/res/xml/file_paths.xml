@@ -1,0 +1,30 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+  FileProvider paths for the share sheet (M5 §E).
+
+  Three roots must be shareable: a received file lands under the app-support
+  directory (mapped to the app's private `files/` dir), a picked file is copied
+  into `cache/lanlink-picked/`, and since 0.2.19 a received file is *published*
+  to `Download/lanlink/` so the user can find it — that last one is an
+  `external-path`. Omitting it makes every share/open of a received file fail
+  with "Failed to find configured root that contains ...", which is exactly the
+  bug 0.2.20 fixes. `path="."` = the whole subtree; the provider is
+  `exported="false"` and grants read per-share only.
+-->
+<paths xmlns:android="http://schemas.android.com/apk/res/android">
+    <files-path name="files" path="." />
+    <cache-path name="cache" path="." />
+    <!--
+      0.2.29: the whole `Download` tree, not `Download/lanlink/`.
+
+      The save folder is user-configurable now, so a received file can live at
+      `Download/素材/x.mp4`. `FileProvider` matches paths against these roots and
+      throws "Failed to find configured root that contains …" for anything
+      outside them — which is exactly the 0.2.20 bug (open/share of a received
+      file failed) reappearing with a new folder name. `Download/` covers every
+      choice the picker can make. The provider stays `exported="false"` and
+      grants read per-share only, so this is not a broader exposure: it is the
+      same tree the app already writes into with `MediaStore`.
+    -->
+    <external-path name="downloads" path="Download/" />
+</paths>

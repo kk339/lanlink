@@ -1,0 +1,6 @@
+# lanlink_store -- analysis configuration.
+#
+# Same toolchain as lanlink_core: the official `lints/recommended` set, kept at
+# full strength. The data layer records facts later milestones trust, so we do
+# not relax any rule.
+include: package:lints/recommended.yaml

@@ -1,0 +1,23 @@
+name: lanlink_store
+description: >-
+  Pure-Dart persistence for lanlink: a SQLite-backed conversation-history store
+  with five tables (devices / conversations / messages / files / transfers),
+  idempotent message ids and the message status machine. Depends on
+  lanlink_core, never on Flutter and never on lanlink_cli.
+version: 0.1.0
+publish_to: none
+
+environment:
+  sdk: ^3.6.0
+
+dependencies:
+  lanlink_core:
+    path: ../core
+  # Pure dart:ffi; on Windows package:sqlite3 loads the system winsqlite3.dll by
+  # default (verified sqlite_version() = 3.51.1), so no C toolchain is needed.
+  # ^2.9.0 stays on the 2.x line, which still excludes the 3.x hooks build.
+  sqlite3: ^2.9.0
+
+dev_dependencies:
+  lints: ^4.0.0
+  test: ^1.25.0

@@ -1,0 +1,4 @@
+# lanlink_cli — analysis configuration.
+#
+# Same strictness as lanlink_core; the CLI shares the core lint baseline.
+include: package:lints/recommended.yaml

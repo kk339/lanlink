@@ -1,0 +1,31 @@
+name: lanlink_core
+description: >-
+  Pure-Dart core of lanlink: the `lanlink/v1` wire format (frame codec, chunked
+  upload, text frames), UDP multicast and broadcast peer discovery with
+  certificate-fingerprint pinning, a self-signed device identity, the TLS
+  transport and the hashing worker. Never depends on Flutter.
+version: 0.1.0
+publish_to: none
+
+environment:
+  sdk: ^3.6.0
+
+dependencies:
+  basic_utils: ^5.7.0
+  # SHA-256 for fingerprints and file verification (0.2.12). Direct because the
+  # hashing hot path imports it: pointycastle's `clip32` masks cost the AOT build
+  # 5.55x (21.1 -> 117.2 MiB/s measured), which was the throughput ceiling for
+  # large transfers. Same digests, uppercase-hex output unchanged.
+  crypto: ^3.0.7
+  # Still a direct dependency of `basic_utils` (certificate generation), and no
+  # longer imported by this package's own code.
+  pointycastle: ^3.9.1
+  # Platform-correct path arithmetic for the receive path (0.2.38): resolving a
+  # folder landing point and *proving* it stays inside the save root needs the
+  # host's own separator and case rules, which hand-rolled string joins get
+  # wrong on Windows.
+  path: ^1.9.0
+
+dev_dependencies:
+  lints: ^4.0.0
+  test: ^1.25.0

@@ -1,0 +1,89 @@
+name: lanlink_app
+description: >-
+  Flutter desktop and Android front-end for lanlink: devices rendered as
+  long-lived conversations, files as messages. Depends on lanlink_core and
+  lanlink_store (path), never on lanlink_cli.
+version: 0.2.63+63
+publish_to: none
+
+environment:
+  sdk: ^3.6.0
+  flutter: ">=3.24.0"
+
+dependencies:
+  flutter:
+    sdk: flutter
+  # 0.2.35: Flutter's **own** widgets (the text-selection toolbar, a `TextField`'s
+  # long-press menu, `AppBar` tooltips, the date / time pickers, `showDialog`'s
+  # default buttons) do not read the strings this app hard-codes — they read
+  # `MaterialLocalizations`. Without the delegates declared here, Flutter falls
+  # back to `DefaultMaterialLocalizations`, which ships **English only**, so those
+  # menus read "Paste / Select all / Copy" inside an otherwise all-Chinese screen.
+  # This SDK package supplies `GlobalMaterialLocalizations` /
+  # `GlobalWidgetsLocalizations` / `GlobalCupertinoLocalizations`; see
+  # `lib/ui/localization.dart` for the single place they are wired in.
+  #
+  # It pulls `intl` into the graph (SDK-pinned, `^0.20.3` for this SDK) — it was
+  # not a dependency before, and nothing else here constrains it, so the
+  # resolution is the SDK's own version.
+  flutter_localizations:
+    sdk: flutter
+  lanlink_core:
+    path: ../core
+  lanlink_store:
+    path: ../store
+  # Only the real (desktop) adapters use this; it is hidden behind the
+  # PlatformPorts interface. The Web build goes through the stub and never
+  # touches it. file_selector is the official flutter.dev package; as of 1.1.0
+  # it endorses file_selector_android / _ios / _linux / _macos / _web / _windows,
+  # so file picking works on every platform (Android included).
+  file_selector: ^1.0.3
+  # Mobile needs a writable, app-private data directory: `Platform.environment`
+  # has no `LOCALAPPDATA` / `XDG_DATA_HOME` on Android/iOS and the filesystem
+  # root is read-only there. path_provider is the official flutter.dev plugin
+  # for that; it is a no-op on Web (the Web build uses the stub).
+  path_provider: ^2.1.4
+  # Used to join path segments portably (`p.join`) instead of hand-rolling a
+  # separator concat — already present transitively, declared directly so the
+  # import is legitimate under `depend_on_referenced_packages`.
+  path: ^1.9.1
+  # package:sqlite3 2.x has no bundled native library: on Android it can only
+  # dlopen a `libsqlite3.so` that the app itself ships (the system one is not in
+  # the public NDK namespace), which is exactly what this plugin provides.
+  # Without it, opening the database throws at startup — the crash right after
+  # the data-directory one. It also declares a Windows platform (it would ship a
+  # `sqlite3.dll`); `store`'s `configureSqlite` pins Windows back to the system
+  # `winsqlite3.dll` so the desktop provider is unchanged.
+  sqlite3_flutter_libs: ^0.5.24
+  desktop_drop: ^0.8.4
+dev_dependencies:
+  flutter_test:
+    sdk: flutter
+  flutter_lints: ^5.0.0
+  # Tests read `pubspec.yaml` for real (the version guard, and the brand test's
+  # "is assets/brand/ actually declared?" check). A YAML parser is the only
+  # honest way to answer the second one: a substring search matches the path in
+  # the **comments** above the declaration, so it stayed green with the
+  # declaration deleted (0.2.10). Already in the lock as a transitive dependency
+  # of flutter_test — this only promotes it, no new package enters the graph.
+  yaml: ^3.1.4
+
+flutter:
+  uses-material-design: true
+  # The in-app brand mark (0.2.9). Transparent PNGs of the user's own icon
+  # artwork — the three prisms + the centre dot, **without** the plate, shadow
+  # or stroke, so it can sit on the app bar.
+  #
+  # ★ `mark@2x.png` is the 192px copy of the same artwork for reference/reuse
+  #   outside Flutter — **Flutter does not read the `@2x` filename suffix**
+  #   (verified in flutter_tools: variant resolution only looks at `2.0x/`-style
+  #   subdirectories). `Image.asset('assets/brand/mark.png')` therefore always
+  #   loads the 96px file, which is already 4x the 24dp slot the bar draws it at,
+  #   so the mark is sharp on every density. If a real 2x variant is ever wanted,
+  #   move the file to `assets/brand/2.0x/mark.png` — do not rename it.
+  #
+  # Vector source: the project's own vector artwork (kept outside this
+  # repo, next to the delivered assets). Drawn by `PhoneShell._barTitle`;
+  # `kBrandMarkAsset` in lib/app_info.dart is the single spelling of the path.
+  assets:
+    - assets/brand/

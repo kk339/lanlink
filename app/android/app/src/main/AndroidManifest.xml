@@ -1,0 +1,176 @@
+<manifest xmlns:android="http://schemas.android.com/apk/res/android">
+    <!-- lanlink talks to peers over the LAN: the resident HTTPS server and the
+         outbound client need INTERNET, and multicast discovery needs the
+         network/Wi-Fi state permissions. INTERNET must be declared here (the
+         main manifest) for it to reach a *release* build — the debug manifest
+         supplies it only for debug builds. -->
+    <uses-permission android:name="android.permission.INTERNET"/>
+    <uses-permission android:name="android.permission.ACCESS_NETWORK_STATE"/>
+    <uses-permission android:name="android.permission.ACCESS_WIFI_STATE"/>
+    <uses-permission android:name="android.permission.CHANGE_WIFI_MULTICAST_STATE"/>
+    <!-- Background keep-alive (docs/13 §4): the discovery timers, the multicast
+         sockets and the resident HTTPS server all live in the one Dart isolate,
+         which Android stops scheduling once the app is cached — peers then time
+         us out as offline. A foreground service keeps the process (and therefore
+         the isolate) running. The type is `connectedDevice`, NOT `dataSync`
+         (capped at 6h/24 from Android 15); its runtime prerequisite is one of a
+         set of permissions that already includes CHANGE_WIFI_MULTICAST_STATE.
+         POST_NOTIFICATIONS (Android 13+) only decides whether the notice is
+         VISIBLE; WAKE_LOCK stops the CPU dozing with the screen off. -->
+    <uses-permission android:name="android.permission.FOREGROUND_SERVICE"/>
+    <uses-permission android:name="android.permission.FOREGROUND_SERVICE_CONNECTED_DEVICE"/>
+    <uses-permission android:name="android.permission.POST_NOTIFICATIONS"/>
+    <uses-permission android:name="android.permission.WAKE_LOCK"/>
+    <!-- Installing a received APK from inside lanlink. From Android 8 (API 26)
+         the app that **starts** the install must hold this permission; without
+         it the installer is refused outright. That is the user's report exactly:
+         they tapped the APK **inside our app** (not in a file manager), and our
+         `open` hands the file to the system installer via ACTION_VIEW
+         (MainActivity.kt `openFile`), so we are the initiating app.
+
+         ★ This permission is **necessary but not sufficient**: the first install
+         still shows the system's "allow installing unknown apps" prompt for
+         lanlink, which the user must accept once. That prompt is a platform
+         requirement — writing it down here so the next person does not read it
+         as a defect.
+
+         ⚠ Play policy: REQUEST_INSTALL_PACKAGES is restricted on Google Play
+         (declared + reviewed at listing). Acceptable for a self-built tool;
+         recorded so nobody meets it unprepared if this is ever published. -->
+    <uses-permission android:name="android.permission.REQUEST_INSTALL_PACKAGES"/>
+    <!-- Legacy public Downloads (0.2.19). From Android 10 (API 29) a received
+         file is published through `MediaStore.Downloads`, which needs NO
+         permission at all. Android 9 and below has no such collection, so
+         `MainActivity.publishToLegacyDownloads` writes into
+         `Download/lanlink` directly — which those releases only allow with
+         WRITE_EXTERNAL_STORAGE. `maxSdkVersion="28"` keeps the permission off
+         every modern device (where it would be meaningless and would only
+         scare the user); where an old device refuses it, the export reports
+         `{error}` and the file stays in the app's private directory. -->
+    <uses-permission
+        android:name="android.permission.WRITE_EXTERNAL_STORAGE"
+        android:maxSdkVersion="28"/>
+    <!-- `android:label` is the name the launcher shows and the name Android
+         uses in Settings / the recents card. It is the product name, not the
+         Dart package name: `lanlink_app` was the template's leftover and is the
+         one string the user saw that disagreed with the rest of the app (`kAppName`
+         in lib/app_info.dart is 'lanlink'). Kept in step by hand — there is no
+         build-time way to read a Dart constant into the manifest.
+         `applicationId` is `io.github.kk339.lanlink` since 0.2.61; up to 0.2.60
+         it was the Flutter template's sample id. The package identity is not a
+         display string: Android treats a different applicationId as a
+         **different app**, so 0.2.61 installs *alongside* 0.2.60 instead of
+         updating it — the old copy must be uninstalled by hand once. That
+         one-time cost buys an id that is actually ours (the `example` namespace
+         is reserved for samples) and stable from here on. Never change it
+         again.
+         `${applicationId}` below (the FileProvider authority) follows it
+         automatically; do not hard-code either value. -->
+    <application
+        android:label="lanlink"
+        android:name="${applicationName}"
+        android:icon="@mipmap/ic_launcher">
+        <!-- launchMode is `singleTask` since 0.2.18 (it was `singleTop`).
+             Why: a share can arrive with the app in ANY state, and only
+             `singleTask` guarantees "one instance, and every later launch is
+             delivered to it through `onNewIntent`". `singleTop` promises that
+             only while the instance is on top of the task it is reused from —
+             one instance too many would mean a second Flutter engine, a second
+             discovery isolate and a second SQLite connection on the same file,
+             which is exactly the failure this app cannot afford.
+
+             What it does NOT change: there is exactly one activity here, so
+             singleTask's "clear everything above me" semantics can never
+             trigger; `taskAffinity=""` (the anti-task-hijack trick) is kept; the
+             back button still exits from the shell as before; the launcher lands
+             in the same task; and there are no deep links, so nothing else reads
+             the launch mode. -->
+        <activity
+            android:name=".MainActivity"
+            android:exported="true"
+            android:launchMode="singleTask"
+            android:taskAffinity=""
+            android:theme="@style/LaunchTheme"
+            android:configChanges="orientation|keyboardHidden|keyboard|screenSize|smallestScreenSize|locale|layoutDirection|fontScale|screenLayout|density|uiMode"
+            android:hardwareAccelerated="true"
+            android:windowSoftInputMode="adjustResize">
+            <!-- Specifies an Android theme to apply to this Activity as soon as
+                 the Android process has started. This theme is visible to the user
+                 while the Flutter UI initializes. After that, this theme continues
+                 to determine the Window background behind the Flutter UI. -->
+            <meta-data
+              android:name="io.flutter.embedding.android.NormalTheme"
+              android:resource="@style/NormalTheme"
+              />
+            <intent-filter>
+                <action android:name="android.intent.action.MAIN"/>
+                <category android:name="android.intent.category.LAUNCHER"/>
+            </intent-filter>
+            <!-- Share sheet (0.2.18): "相册里点分享，分享列表里找不到咱这个软件".
+                 Without these two filters Android has no reason to list lanlink
+                 as a share target, and nothing can ever hand it a file.
+
+                 `*/*` on purpose: the app accepts any file type it can carry
+                 (that is the product), so the user does NOT have to hunt for us
+                 in a per-type submenu. The cost is that a **text**-only share
+                 also lands here — `MainActivity.handleShareIntent` ignores it with
+                 a log line and never crashes (text shares are out of scope in
+                 this version).
+
+                 Both filters are separate blocks on purpose: one intent-filter
+                 matches on the union of its actions but on the INTERSECTION of
+                 its categories, and merging SEND with SEND_MULTIPLE into one
+                 block would also make the LAUNCHER entry's absence of a category
+                 ambiguous. MAIN/LAUNCHER above is untouched. -->
+            <intent-filter>
+                <action android:name="android.intent.action.SEND"/>
+                <category android:name="android.intent.category.DEFAULT"/>
+                <data android:mimeType="*/*"/>
+            </intent-filter>
+            <intent-filter>
+                <action android:name="android.intent.action.SEND_MULTIPLE"/>
+                <category android:name="android.intent.category.DEFAULT"/>
+                <data android:mimeType="*/*"/>
+            </intent-filter>
+        </activity>
+        <!-- The background keep-alive. `stopWithTask` ties its life to the app's
+             (removed when the user clears the task, never an orphan notice);
+             nothing starts it from device boot — there is no BOOT_COMPLETED
+             receiver. See LanlinkForegroundService.kt. -->
+        <service
+            android:name=".LanlinkForegroundService"
+            android:exported="false"
+            android:stopWithTask="true"
+            android:foregroundServiceType="connectedDevice" />
+        <!-- Share sheet (M5 §E): hands a local file to another app as a
+             `content://` URI. A `file://` URI would throw FileUriExposedException
+             on Android 7+, so the file must go through this provider. Not
+             exported (grants read only, per share, via FLAG_GRANT_READ_URI_PERMISSION);
+             the visible roots are declared in res/xml/file_paths.xml. -->
+        <provider
+            android:name="androidx.core.content.FileProvider"
+            android:authorities="${applicationId}.fileprovider"
+            android:exported="false"
+            android:grantUriPermissions="true">
+            <meta-data
+                android:name="android.support.FILE_PROVIDER_PATHS"
+                android:resource="@xml/file_paths" />
+        </provider>
+        <!-- Don't delete the meta-data below.
+             This is used by the Flutter tool to generate GeneratedPluginRegistrant.java -->
+        <meta-data
+            android:name="flutterEmbedding"
+            android:value="2" />
+    </application>
+    <!-- Required to query activities that can process text, see:
+         https://developer.android.com/training/package-visibility and
+         https://developer.android.com/reference/android/content/Intent#ACTION_PROCESS_TEXT.
+
+         In particular, this is used by the Flutter engine in io.flutter.plugin.text.ProcessTextPlugin. -->
+    <queries>
+        <intent>
+            <action android:name="android.intent.action.PROCESS_TEXT"/>
+            <data android:mimeType="text/plain"/>
+        </intent>
+    </queries>
+</manifest>

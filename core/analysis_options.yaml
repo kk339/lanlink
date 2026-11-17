@@ -1,0 +1,6 @@
+# lanlink_core — analysis configuration.
+#
+# We use the official `lints/recommended` set. The wire protocol code is
+# security sensitive, so we keep the recommended rules on and deliberately do
+# not relax any of them.
+include: package:lints/recommended.yaml

@@ -1,0 +1,82 @@
+name: 构建 / 运行问题
+description: 编译不过、跑不起来、两台设备互相看不见、传输出问题
+title: "[问题] "
+labels: []
+body:
+  - type: markdown
+    attributes:
+      value: |
+        **先看 README 的「常见构建失败」一节** —— 大部分 build fails 那里已经有答案，对着看一眼可能比等回复快。
+
+        这个项目是个人自用的，回复不一定及时；但只要你把下面填全，我看到就能直接查。
+  - type: dropdown
+    id: stage
+    attributes:
+      label: 卡在哪一步
+      options:
+        - 装好了但打不开
+        - 两台设备互相看不见
+        - 能看见设备、但发不出去
+        - 传输中途断了 / 很慢
+        - 收到的文件不对（数量 / 位置 / 打不开）
+        - 自己编译时出错（拉依赖 / build）
+        - 其他
+    validations:
+      required: true
+  - type: dropdown
+    id: os
+    attributes:
+      label: 出问题的系统
+      options:
+        - Windows 11
+        - Windows 10
+        - 其他 Windows
+        - Android 12 及以上
+        - Android 8 – 11
+        - macOS / Linux（本仓库未提供，仅供说明）
+    validations:
+      required: true
+  - type: input
+    id: version
+    attributes:
+      label: 版本号
+      description: 应用「关于」页里显示的版本，或 APK / zip 文件名里的版本
+      placeholder: 0.2.61
+    validations:
+      required: true
+  - type: input
+    id: flutter_version
+    attributes:
+      label: 如果是你自己编译的：Flutter 版本
+      description: 只有从源码编译的人才需要填 —— 在命令行运行 `flutter --version`，把第一行整行贴上。**装的是现成的包就留空。**
+      placeholder: Flutter 3.47.6 • channel stable • …
+    validations:
+      required: false
+  - type: textarea
+    id: error
+    attributes:
+      label: 完整报错
+      description: 请贴**原文**，不要概括成"报错了"。构建类问题贴最后 30 行就够。
+      render: shell
+    validations:
+      required: true
+  - type: textarea
+    id: steps
+    attributes:
+      label: 复现步骤
+      description: 从干净状态开始，一步一步写。能复现的问题才修得掉。
+      value: |
+        1.
+        2.
+        3.
+    validations:
+      required: true
+  - type: checkboxes
+    id: confirm
+    attributes:
+      label: 提交前确认
+      options:
+        - label: 我读过 README 的「常见构建失败」一节
+          required: true
+        - label: 上面贴的是完整报错，不是"不行""用不了"
+          required: true
